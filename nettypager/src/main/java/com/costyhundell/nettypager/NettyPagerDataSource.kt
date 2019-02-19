@@ -111,5 +111,4 @@ abstract class NettyPagerDataSource<T> : PageKeyedDataSource<Int, NettyItem>() {
     abstract fun onLoadInitialError(error: Throwable)
     abstract fun onLoadAfterError(error: Throwable)
 
-    interface INettyItem : NettyItem
 }

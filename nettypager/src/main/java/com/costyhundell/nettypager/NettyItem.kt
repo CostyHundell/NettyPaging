@@ -1,3 +1,5 @@
 package com.costyhundell.nettypager
 
-interface NettyItem
+interface NettyItem {
+    fun getItemViewType(): Int
+}
