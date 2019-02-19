@@ -9,7 +9,7 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.functions.Action
 import io.reactivex.schedulers.Schedulers
 
-abstract class NettyPagerDataSource<T> : PageKeyedDataSource<Int, NettyPagerDataSource.NettyItem>() {
+abstract class NettyPagerDataSource<T> : PageKeyedDataSource<Int, NettyItem>() {
 
     var single: Single<T>? = null
     var observable: Observable<T>? = null
@@ -111,5 +111,5 @@ abstract class NettyPagerDataSource<T> : PageKeyedDataSource<Int, NettyPagerData
     abstract fun onLoadInitialError(error: Throwable)
     abstract fun onLoadAfterError(error: Throwable)
 
-    interface NettyItem
+    interface INettyItem : NettyItem
 }
