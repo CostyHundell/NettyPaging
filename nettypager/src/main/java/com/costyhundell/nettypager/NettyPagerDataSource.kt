@@ -9,7 +9,7 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.functions.Action
 import io.reactivex.schedulers.Schedulers
 
-abstract class NettyPagerDataSource<T> : PageKeyedDataSource<Int, NettyItem>() {
+abstract class NettyPagerDataSource<T> : PageKeyedDataSource<Int, NettyPagerDataSource.NettyItem>() {
 
     var single: Single<T>? = null
     var observable: Observable<T>? = null
@@ -46,7 +46,7 @@ abstract class NettyPagerDataSource<T> : PageKeyedDataSource<Int, NettyItem>() {
         compositeDisposable.add(disposable!!)
     }
 
-    override fun loadAfter(params: LoadParams<Int>, callback: LoadCallback<Int, com.costyhundell.nettypager.NettyItem>) {
+    override fun loadAfter(params: LoadParams<Int>, callback: LoadCallback<Int, NettyItem>) {
         val disposable = when {
             single != null -> {
                 single!!
@@ -111,4 +111,5 @@ abstract class NettyPagerDataSource<T> : PageKeyedDataSource<Int, NettyItem>() {
     abstract fun onLoadInitialError(error: Throwable)
     abstract fun onLoadAfterError(error: Throwable)
 
+    interface NettyItem
 }
