@@ -7,8 +7,9 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 
 @RequiresApi(24)
-abstract class MultiNettyPagerDataSource<U>(val multiCalls: List<Single<U>>): PageKeyedDataSource<Int, NettyItem>() {
+abstract class MultiNettyPagerDataSource<U>: PageKeyedDataSource<Int, NettyItem>() {
 
+    abstract var multiCalls: List<Single<U>>
     private var callMap: MutableMap<Int, U> = emptyMap<Int, U>().toMutableMap()
 
     override fun loadInitial(params: LoadInitialParams<Int>, callback: LoadInitialCallback<Int, NettyItem>) {
