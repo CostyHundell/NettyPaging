@@ -9,26 +9,16 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.functions.Action
 import io.reactivex.schedulers.Schedulers
 
-abstract class NettyPagerDataSource<T, Int, S> : PageKeyedDataSource<Int, S>() {
+abstract class SimpleNettyPagerDataSource<T> : PageKeyedDataSource<Int, NettyItem>() {
 
-    var single: Single<T>? = null
+    abstract var single: Single<T>
     var observable: Observable<T>? = null
 
     private var retryCompletable: Completable? = null
     private var compositeDisposable = CompositeDisposable()
 
-    override fun loadInitial(params: LoadInitialParams<Int>, callback: LoadInitialCallback<Int, S>) {
+    override fun loadInitial(params: LoadInitialParams<Int>, callback: LoadInitialCallback<Int, NettyItem>) {
         val disposable = when {
-            single != null -> {
-                single!!.subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe({ response ->
-                        setRetryAction(Action { loadInitial(params, callback) })
-                        onLoadInitialSuccess(callback, response)
-                    }, { error ->
-                        onLoadInitialError(error)
-                    })
-            }
             observable != null -> {
                 observable!!
                     .subscribeOn(Schedulers.io())
@@ -40,25 +30,24 @@ abstract class NettyPagerDataSource<T, Int, S> : PageKeyedDataSource<Int, S>() {
                         onLoadInitialError(error)
                     })
             }
-            else -> null
+            else -> {
+                single.subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe({ response ->
+                        setRetryAction(Action { loadInitial(params, callback) })
+                        onLoadInitialSuccess(callback, response)
+                    }, { error ->
+                        onLoadInitialError(error)
+                    })
+            }
+
         }
 
         compositeDisposable.add(disposable!!)
     }
 
-    override fun loadAfter(params: LoadParams<Int>, callback: LoadCallback<Int, S>) {
+    override fun loadAfter(params: LoadParams<Int>, callback: LoadCallback<Int, NettyItem>) {
         val disposable = when {
-            single != null -> {
-                single!!
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe({ response ->
-                        setRetryAction(Action { loadAfter(params, callback) })
-                        onLoadAfterSuccess(callback, response, params)
-                    }, { error ->
-                        onLoadAfterError(error)
-                    })
-            }
             observable != null -> {
                 observable!!
                     .subscribeOn(Schedulers.io())
@@ -70,17 +59,27 @@ abstract class NettyPagerDataSource<T, Int, S> : PageKeyedDataSource<Int, S>() {
                         onLoadAfterError(error)
                     })
             }
-            else -> null
+            else -> {
+                single
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe({ response ->
+                        setRetryAction(Action { loadAfter(params, callback) })
+                        onLoadAfterSuccess(callback, response, params)
+                    }, { error ->
+                        onLoadAfterError(error)
+                    })
+            }
         }
 
         compositeDisposable.add(disposable!!)
     }
 
-    fun postInitial(callback: LoadInitialCallback<Int, S>, items: List<S>, page: Int) {
+    fun postInitial(callback: LoadInitialCallback<Int, NettyItem>, items: List<NettyItem>, page: Int) {
         callback.onResult(items, null, page)
     }
 
-    fun postAfter(callback: LoadCallback<Int, S>, items: List<S>, page: Int) {
+    fun postAfter(callback: LoadCallback<Int, NettyItem>, items: List<NettyItem>, page: Int) {
         callback.onResult(items, page)
     }
 
@@ -103,11 +102,11 @@ abstract class NettyPagerDataSource<T, Int, S> : PageKeyedDataSource<Int, S>() {
         retryCompletable = if (action == null) null else Completable.fromAction(action)
     }
 
-    override fun loadBefore(params: LoadParams<Int>, callback: LoadCallback<Int, S>) {
+    override fun loadBefore(params: LoadParams<Int>, callback: LoadCallback<Int, NettyItem>) {
     }
 
-    abstract fun onLoadInitialSuccess(callback: PageKeyedDataSource.LoadInitialCallback<Int, S>, response: T)
-    abstract fun onLoadAfterSuccess(callback: LoadCallback<Int, S>, response: T, params: LoadParams<Int>)
+    abstract fun onLoadInitialSuccess(callback: PageKeyedDataSource.LoadInitialCallback<Int, NettyItem>, response: T)
+    abstract fun onLoadAfterSuccess(callback: LoadCallback<Int, NettyItem>, response: T, params: LoadParams<Int>)
     abstract fun onLoadInitialError(error: Throwable)
     abstract fun onLoadAfterError(error: Throwable)
 
