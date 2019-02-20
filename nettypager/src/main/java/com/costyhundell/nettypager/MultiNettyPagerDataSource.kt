@@ -5,9 +5,9 @@ import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 
-abstract class MultiNettyPagerDataSource: PageKeyedDataSource<Int, NettyItem>() {
+abstract class MultiNettyPagerDataSource<U: NettyResponse>: PageKeyedDataSource<Int, NettyItem>() {
 
-    abstract var multiCalls: List<Single<NettyResponse>>
+    abstract var multiCalls: List<Single<U>>
 
     private var callMap: MutableMap<Int, NettyResponse> = emptyMap<Int, NettyResponse>().toMutableMap()
 
@@ -16,6 +16,7 @@ abstract class MultiNettyPagerDataSource: PageKeyedDataSource<Int, NettyItem>() 
             single.subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ response ->
+                    response as NettyResponse
                     callMap[index] = response
                     if (index == multiCalls.size -1) {
                         onLoadInitialSuccess(callback, callMap)
@@ -31,6 +32,7 @@ abstract class MultiNettyPagerDataSource: PageKeyedDataSource<Int, NettyItem>() 
             single.subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ response ->
+                    response as NettyResponse
                     callMap[index] = response
                     if (index == multiCalls.size -1) {
                         onLoadAfterSuccess(callback, callMap, params)
