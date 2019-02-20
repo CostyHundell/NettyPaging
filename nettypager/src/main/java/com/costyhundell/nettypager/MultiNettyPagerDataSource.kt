@@ -1,18 +1,20 @@
 package com.costyhundell.nettypager
 
+import androidx.annotation.RequiresApi
 import androidx.paging.PageKeyedDataSource
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 
-abstract class MultiNettyPagerDataSource<U: NettyResponse>: PageKeyedDataSource<Int, NettyItem>() {
+@RequiresApi(24)
+abstract class MultiNettyPagerDataSource: PageKeyedDataSource<Int, NettyItem>() {
 
-    abstract var multiCalls: List<Single<U>>
+    abstract var multiCalls: HashMap<Int, Single<NettyResponse>>
 
     private var callMap: MutableMap<Int, NettyResponse> = emptyMap<Int, NettyResponse>().toMutableMap()
 
     override fun loadInitial(params: LoadInitialParams<Int>, callback: LoadInitialCallback<Int, NettyItem>) {
-        multiCalls.forEachIndexed { index, single ->
+        multiCalls.forEach { index, single ->
             single.subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ response ->
@@ -28,7 +30,7 @@ abstract class MultiNettyPagerDataSource<U: NettyResponse>: PageKeyedDataSource<
     }
 
     override fun loadAfter(params: LoadParams<Int>, callback: LoadCallback<Int, NettyItem>) {
-        multiCalls.forEachIndexed { index, single ->
+        multiCalls.forEach { index, single ->
             single.subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ response ->
