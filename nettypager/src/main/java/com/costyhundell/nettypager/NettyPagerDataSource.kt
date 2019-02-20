@@ -11,7 +11,7 @@ import io.reactivex.schedulers.Schedulers
 
 abstract class NettyPagerDataSource<T> : PageKeyedDataSource<Int, NettyItem>() {
 
-    var single: Single<T>? = null
+    abstract var single: Single<T>
     var observable: Observable<T>? = null
 
     private var retryCompletable: Completable? = null
