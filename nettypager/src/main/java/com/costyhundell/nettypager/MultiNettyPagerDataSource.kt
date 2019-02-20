@@ -7,9 +7,9 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 
 @RequiresApi(24)
-abstract class MultiNettyPagerDataSource(val multiCalls: List<Single<NettyResponse>>): PageKeyedDataSource<Int, NettyItem>() {
+abstract class MultiNettyPagerDataSource<U>(val multiCalls: List<Single<U>>): PageKeyedDataSource<Int, NettyItem>() {
 
-    private var callMap: MutableMap<Int, NettyResponse> = emptyMap<Int, NettyResponse>().toMutableMap()
+    private var callMap: MutableMap<Int, U> = emptyMap<Int, U>().toMutableMap()
 
     override fun loadInitial(params: LoadInitialParams<Int>, callback: LoadInitialCallback<Int, NettyItem>) {
         multiCalls.forEachIndexed { index, single ->
@@ -27,7 +27,7 @@ abstract class MultiNettyPagerDataSource(val multiCalls: List<Single<NettyRespon
     }
 
     override fun loadAfter(params: LoadParams<Int>, callback: LoadCallback<Int, NettyItem>) {
-        multiCalls.forEachIndexed() { index, single ->
+        multiCalls.forEachIndexed { index, single ->
             single.subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe({ response ->
@@ -51,6 +51,6 @@ abstract class MultiNettyPagerDataSource(val multiCalls: List<Single<NettyRespon
 
     override fun loadBefore(params: LoadParams<Int>, callback: LoadCallback<Int, NettyItem>) {}
 
-    abstract fun onLoadInitialSuccess(callback: LoadInitialCallback<Int, NettyItem>, results: Map<Int, NettyResponse>)
-    abstract fun onLoadAfterSuccess(callback: LoadCallback<Int, NettyItem>, results: Map<Int, NettyResponse>, params: LoadParams<Int>)
+    abstract fun onLoadInitialSuccess(callback: LoadInitialCallback<Int, NettyItem>, results: Map<Int, U>)
+    abstract fun onLoadAfterSuccess(callback: LoadCallback<Int, NettyItem>, results: Map<Int, U>, params: LoadParams<Int>)
 }
