@@ -9,7 +9,7 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.functions.Action
 import io.reactivex.schedulers.Schedulers
 
-abstract class NettyPagerDataSource<T> : PageKeyedDataSource<Int, NettyItem>() {
+abstract class SimpleNettyPagerDataSource<T> : PageKeyedDataSource<Int, NettyItem>() {
 
     abstract var single: Single<T>
     var observable: Observable<T>? = null
@@ -19,16 +19,6 @@ abstract class NettyPagerDataSource<T> : PageKeyedDataSource<Int, NettyItem>() {
 
     override fun loadInitial(params: LoadInitialParams<Int>, callback: LoadInitialCallback<Int, NettyItem>) {
         val disposable = when {
-            single != null -> {
-                single!!.subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe({ response ->
-                        setRetryAction(Action { loadInitial(params, callback) })
-                        onLoadInitialSuccess(callback, response)
-                    }, { error ->
-                        onLoadInitialError(error)
-                    })
-            }
             observable != null -> {
                 observable!!
                     .subscribeOn(Schedulers.io())
@@ -40,7 +30,17 @@ abstract class NettyPagerDataSource<T> : PageKeyedDataSource<Int, NettyItem>() {
                         onLoadInitialError(error)
                     })
             }
-            else -> null
+            else -> {
+                single.subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe({ response ->
+                        setRetryAction(Action { loadInitial(params, callback) })
+                        onLoadInitialSuccess(callback, response)
+                    }, { error ->
+                        onLoadInitialError(error)
+                    })
+            }
+
         }
 
         compositeDisposable.add(disposable!!)
@@ -48,17 +48,6 @@ abstract class NettyPagerDataSource<T> : PageKeyedDataSource<Int, NettyItem>() {
 
     override fun loadAfter(params: LoadParams<Int>, callback: LoadCallback<Int, NettyItem>) {
         val disposable = when {
-            single != null -> {
-                single!!
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe({ response ->
-                        setRetryAction(Action { loadAfter(params, callback) })
-                        onLoadAfterSuccess(callback, response, params)
-                    }, { error ->
-                        onLoadAfterError(error)
-                    })
-            }
             observable != null -> {
                 observable!!
                     .subscribeOn(Schedulers.io())
@@ -70,7 +59,17 @@ abstract class NettyPagerDataSource<T> : PageKeyedDataSource<Int, NettyItem>() {
                         onLoadAfterError(error)
                     })
             }
-            else -> null
+            else -> {
+                single
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe({ response ->
+                        setRetryAction(Action { loadAfter(params, callback) })
+                        onLoadAfterSuccess(callback, response, params)
+                    }, { error ->
+                        onLoadAfterError(error)
+                    })
+            }
         }
 
         compositeDisposable.add(disposable!!)
