@@ -41,9 +41,15 @@ abstract class MultiNettyPagerDataSource: PageKeyedDataSource<Int, NettyItem>() 
         }
     }
 
-    override fun loadBefore(params: LoadParams<Int>, callback: LoadCallback<Int, NettyItem>) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    fun postInitial(callback: LoadInitialCallback<Int, NettyItem>, items: List<NettyItem>, page: Int) {
+        callback.onResult(items, null, page)
     }
+
+    fun postAfter(callback: LoadCallback<Int, NettyItem>, items: List<NettyItem>, page: Int) {
+        callback.onResult(items, page)
+    }
+
+    override fun loadBefore(params: LoadParams<Int>, callback: LoadCallback<Int, NettyItem>) {}
 
     abstract fun onLoadInitialSuccess(callback: LoadInitialCallback<Int, NettyItem>, results: Map<Int, NettyResponse>)
     abstract fun onLoadAfterSuccess(callback: LoadCallback<Int, NettyItem>, results: Map<Int, NettyResponse>, params: LoadParams<Int>)
