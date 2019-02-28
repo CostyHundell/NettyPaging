@@ -2,44 +2,52 @@ package com.costyhundell.nettypager
 
 import androidx.annotation.RequiresApi
 import androidx.paging.PageKeyedDataSource
+import io.reactivex.Completable
+import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
 
 @RequiresApi(24)
 abstract class MultiNettyPagerDataSource<U>: PageKeyedDataSource<Int, NettyItem>() {
 
-    abstract var multiCalls: List<Single<U>>
-    private var callMap: MutableMap<Int, U> = emptyMap<Int, U>().toMutableMap()
+    abstract var single: Single<U>
+    var observable: Observable<U>? = null
+
+    private var retryCompletable: Completable? = null
+    private var compositeDisposable = CompositeDisposable()
 
     override fun loadInitial(params: LoadInitialParams<Int>, callback: LoadInitialCallback<Int, NettyItem>) {
-        multiCalls.forEachIndexed { index, single ->
+
             single.subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ response ->
-                    callMap[index] = response
-                    if (index == multiCalls.size -1) {
-                        onLoadInitialSuccess(callback, callMap)
-                    }
-                }, { error ->
-//                    onLoadInitialError(error)
-                })
-        }
+                .doOnSuccess {
+                        response ->
+//                        onLoadInitialSuccess(callback)
+
+                }
+                .doOnError {
+                        error ->
+                    //                    onLoadInitialError(error)
+                }
+                .subscribe()
+
     }
 
     override fun loadAfter(params: LoadParams<Int>, callback: LoadCallback<Int, NettyItem>) {
-        multiCalls.forEachIndexed { index, single ->
+
             single.subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ response ->
-                    callMap[index] = response
-                    if (index == multiCalls.size -1) {
-                        onLoadAfterSuccess(callback, callMap, params)
-                    }
-                }, { error ->
+                .doOnSuccess {
+                        response ->
+//                    onLoadAfterSuccess(callback)
+
+                }
+                .doOnError {
+                        error ->
                     //                    onLoadInitialError(error)
-                })
-        }
+                }.subscribe()
     }
 
     fun postInitial(callback: LoadInitialCallback<Int, NettyItem>, items: List<NettyItem>, page: Int) {
