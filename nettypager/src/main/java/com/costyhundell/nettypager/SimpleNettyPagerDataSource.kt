@@ -15,7 +15,6 @@ abstract class SimpleNettyPagerDataSource<T>(private val numberOfApis: Int) : Pa
     var observable: Observable<T>? = null
 
     private var retryCompletable: Completable? = null
-    private var nextCompletable: Completable? = null
     private var compositeDisposable = CompositeDisposable()
     var callsMade = 0
 
@@ -107,34 +106,27 @@ abstract class SimpleNettyPagerDataSource<T>(private val numberOfApis: Int) : Pa
         requestedLoadSize: Int,
         call: Single<T>,
         callback: LoadInitialCallback<Int, NettyItem>
-    ) {
+    ): Completable {
         val newInitialParams = LoadInitialParams<Int>(requestedLoadSize, placeHoldersEnabled)
         single = call
-        nextCompletable = Completable.fromAction { loadInitial(newInitialParams, callback) }
+        return Completable.fromAction { loadInitial(newInitialParams, callback) }
 
-        fun runNext() {
-            compositeDisposable.add(
-                nextCompletable!!
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe()
-            )
-        }
     }
 
-    fun setNextAfterCall(requestedLoadSize: Int, page: Int, call: Single<T>, callback: LoadCallback<Int, NettyItem>) {
-        val newParams = LoadParams<Int>(page, requestedLoadSize)
-        single = call
-        nextCompletable = Completable.fromAction { loadAfter(newParams, callback) }
+    fun <A>Completable.runNext() {
+        compositeDisposable.add(
+            this
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe()
+        )
+    }
 
-        fun runNext() {
-            compositeDisposable.add(
-                nextCompletable!!
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe()
-            )
-        }
+    fun setNextAfterCall(requestedLoadSize: Int, page: Int, call: Single<T>, callback: LoadCallback<Int, NettyItem>): Completable {
+        val newParams = LoadParams(page, requestedLoadSize)
+        single = call
+        return Completable.fromAction { loadAfter(newParams, callback) }
+
     }
 
 
