@@ -135,7 +135,7 @@ abstract class NettyPagerDataSource<T>(val numberOfApis: Int) : PageKeyedDataSou
     abstract fun onLoadAfterSuccess(callback: LoadCallback<Int, NettyItem>, response: T, params: LoadParams<Int>)
     abstract fun onLoadInitialError(error: Throwable)
     abstract fun onLoadAfterError(error: Throwable)
-    protected fun manageApis(): Single<T>? { return null }
+    protected open fun manageApis(): Single<T>? { return null }
 
     fun Completable.runNext() {
         compositeDisposable.add(
