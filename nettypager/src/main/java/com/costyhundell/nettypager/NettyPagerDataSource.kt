@@ -9,9 +9,10 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.functions.Action
 import io.reactivex.schedulers.Schedulers
 
-abstract class SimpleNettyPagerDataSource<T>(private val numberOfApis: Int) : PageKeyedDataSource<Int, NettyItem>() {
+abstract class NettyPagerDataSource<T>(val numberOfApis: Int) : PageKeyedDataSource<Int, NettyItem>() {
 
     abstract var single: Single<T>
+    var oldSingle: Single<T>? = null
     var observable: Observable<T>? = null
 
     private var retryCompletable: Completable? = null
@@ -82,11 +83,13 @@ abstract class SimpleNettyPagerDataSource<T>(private val numberOfApis: Int) : Pa
 
     fun postInitial(callback: LoadInitialCallback<Int, NettyItem>, items: List<NettyItem>, page: Int) {
         callsMade = 0
+        if (oldSingle != null) single = oldSingle!!
         callback.onResult(items, null, page)
     }
 
     fun postAfter(callback: LoadCallback<Int, NettyItem>, items: List<NettyItem>, page: Int) {
         callsMade = 0
+        if (oldSingle != null) single = oldSingle!!
         callback.onResult(items, page)
     }
 
@@ -101,29 +104,17 @@ abstract class SimpleNettyPagerDataSource<T>(private val numberOfApis: Int) : Pa
         }
     }
 
-    fun setNextInitialCall(
-        placeHoldersEnabled: Boolean,
-        requestedLoadSize: Int,
-        call: Single<T>,
-        callback: LoadInitialCallback<Int, NettyItem>
-    ): Completable {
+    fun setNextInitialCall(placeHoldersEnabled: Boolean, requestedLoadSize: Int, call: Single<T>, callback: LoadInitialCallback<Int, NettyItem>): Completable {
         val newInitialParams = LoadInitialParams<Int>(requestedLoadSize, placeHoldersEnabled)
+        if (callsMade == 1) oldSingle = single
         single = call
         return Completable.fromAction { loadInitial(newInitialParams, callback) }
 
     }
 
-    fun <A>Completable.runNext() {
-        compositeDisposable.add(
-            this
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe()
-        )
-    }
-
-    fun setNextAfterCall(requestedLoadSize: Int, page: Int, call: Single<T>, callback: LoadCallback<Int, NettyItem>): Completable {
+    fun setNextAfterCall(page: Int, requestedLoadSize: Int, call: Single<T>, callback: LoadCallback<Int, NettyItem>): Completable {
         val newParams = LoadParams(page, requestedLoadSize)
+        if (callsMade == 1) oldSingle = single
         single = call
         return Completable.fromAction { loadAfter(newParams, callback) }
 
@@ -138,12 +129,20 @@ abstract class SimpleNettyPagerDataSource<T>(private val numberOfApis: Int) : Pa
         retryCompletable = if (action == null) null else Completable.fromAction(action)
     }
 
-    override fun loadBefore(params: LoadParams<Int>, callback: LoadCallback<Int, NettyItem>) {
-    }
+    override fun loadBefore(params: LoadParams<Int>, callback: LoadCallback<Int, NettyItem>) {}
 
     abstract fun onLoadInitialSuccess(callback: PageKeyedDataSource.LoadInitialCallback<Int, NettyItem>, response: T)
     abstract fun onLoadAfterSuccess(callback: LoadCallback<Int, NettyItem>, response: T, params: LoadParams<Int>)
     abstract fun onLoadInitialError(error: Throwable)
     abstract fun onLoadAfterError(error: Throwable)
+    protected fun manageApis(): Single<T>? { return null }
 
+    fun Completable.runNext() {
+        compositeDisposable.add(
+            this
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe()
+        )
+    }
 }
