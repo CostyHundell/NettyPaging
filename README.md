@@ -91,6 +91,12 @@ data class NewsResponse(val status: String,
     override fun getResponseType(): Int = Constant.NEWS_RESPONSE
 }
 ```
+
+You will need to register a type adapter in your `GsonConverterFactory` you can implement your own but if your response is a json object just create the adapter with a call like this:
+```
+val adapter = DeserializeResponse(NewsResponse::class.java)
+```
+
 So what this now allows you to do is call two different APIs that get two different responses but once finished for the user it will look like one list.
 
 Note: This means that your RetrofitAPI call should return a `NettyResponse` for all API calls not the response you're looking for.
