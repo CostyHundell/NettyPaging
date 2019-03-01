@@ -33,7 +33,7 @@ implementation 'io.reactivex.rxjava2:rxjava:2.1.12'
 implementation 'io.reactivex.rxjava2:rxandroid:2.0.2'
 ```
 
-Instead of using `PagedKeyDataSource` in that example you use the libraries new class `NettyPagedDataSource`.
+Instead of using `PagedKeyDataSource` in that example you use the libraries new class `NettyPagedDataSource`. And you will replace `PagedListAdapter` with `NettyPagedListAdapter`.
 
 And you should then get something like this:
 ```
