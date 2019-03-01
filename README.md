@@ -1,4 +1,4 @@
-# NettyPager
+# NettyPaging
 A library helper that remove boilerplate and make it easy to have paged data from multiple different API calls so to the user it looks like one.
 
 ## Adding the dependency
@@ -18,7 +18,7 @@ allprojects {
 
 Then add the library to your app gradle
 ```
-implementation 'com.github.CostyHundell:NettyPager:1.1.0-alpha1'
+implementation 'com.github.CostyHundell:NettyPaging:1.0.0'
 ```
 
 ## Using the library
